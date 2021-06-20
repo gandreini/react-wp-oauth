@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 import "./App.css";
 import Login from "./features/Login";
+import LoginJwt from "./features/LoginJwt";
 import Signup from "./features/Signup";
 import OAuthCallback from "./features/OAuthCallback";
 import Favorites from "./features/Favorites";
@@ -20,6 +21,9 @@ function App() {
                             <Link to="/login">Login</Link>
                         </li>
                         <li>
+                            <Link to="/loginJwt">Login JWT</Link>
+                        </li>
+                        <li>
                             <Link to="/signup">Signup</Link>
                         </li>
                         <li>
@@ -33,6 +37,9 @@ function App() {
                 <Switch>
                     <Route path="/login">
                         <Login />
+                    </Route>
+                    <Route path="/loginJwt">
+                        <LoginJwt />
                     </Route>
                     <Route path="/signup">
                         <Signup />

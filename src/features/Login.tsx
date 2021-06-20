@@ -11,12 +11,12 @@ import {
 } from "../state/loginSlice";
 import { RootState } from "../state/store";
 import { useDispatch, useSelector } from "react-redux";
-// import { ucExecuteLogin as ExecuteLogin } from "../auth/ucAuthentication";
+// import { ucExecuteLogin as ExecuteLogin } from "../grant-types/ucAuthentication";
 import {
     AuthCodeExecuteLogin as ExecuteLogin,
     AuthCodeExecuteAccessTokenRequest as ExecuteAccessTokenRequest,
     AuthCodeExecuteMe as ExecuteMe,
-} from "../auth/AuthCodeAuthentication";
+} from "../grant-types/AuthCodeAuthentication";
 
 const Login: React.FC = (props) => {
     // React hook form.
@@ -29,16 +29,19 @@ const Login: React.FC = (props) => {
     // Parameters
     const email = "test@test.com";
     const password = "test";
-    const client_id = "Wbl1EicdRchQu9PGq7y2UreQhPoEf0bPZNe2pEm8";
-    const client_secret = "l65zRugOX5KLcgOPZ3ObIkkaRgKpglEulsDR3bMA";
+    const client_id = process.env.REACT_APP_CLIENT_ID;
+    const client_secret = process.env.REACT_APP_CLIENT_SECRET;
     const response_type = "code";
     const scope = "basic";
-    const redirect_uri = "http://localhost:3000/oauth_callback";
-    const code_challenge_method = "s256";
+    const redirect_uri = process.env.REACT_APP_URL + "oauth_callback";
+    const codeChallengeMethod = "s256";
 
     // Redux state.
-    const loginState = useSelector((state: RootState) => state.login);
+    const loginPkce = useSelector((state: RootState) => state.login.pkce);
     const authCode = useSelector((state: RootState) => state.login.authCode);
+    const codeChallenge = useSelector(
+        (state: RootState) => state.login.pkce.code_challenge
+    );
     const accessToken = useSelector(
         (state: RootState) => state.login.accessToken
     );
@@ -69,43 +72,44 @@ const Login: React.FC = (props) => {
         // event.data is "hi there yourself!  the secret response is: rheeeeet!"
     }
 
-    if (
-        loginState.pkce.code_challenge === "" &&
-        loginState.pkce.code_verifier === ""
-    ) {
+    // PKCE codes generation.
+    if (loginPkce.code_challenge === "" && loginPkce.code_verifier === "") {
         const pkce = pkceChallenge();
         dispatch(setPkce({ pkce: pkce })); // To redux state:
     }
 
     const onLoginSubmit = (data: any) => {
-        // jwtExecuteLogin(data.email, data.password);
-        ExecuteLogin(
-            data.email,
-            data.password,
-            data.client_id,
-            data.client_secret,
-            data.response_type,
-            data.scope,
-            data.redirect_uri,
-            data.code_challenge,
-            data.code_challenge_method
-        );
+        if (client_id && client_secret) {
+            ExecuteLogin(
+                data.email,
+                data.password,
+                client_id,
+                client_secret,
+                response_type,
+                scope,
+                redirect_uri,
+                codeChallenge,
+                codeChallengeMethod
+            );
+        }
     };
 
     const getAccessToken = () => {
-        ExecuteAccessTokenRequest(
-            client_id,
-            client_secret,
-            authCode,
-            "http://localhost:3000/oauth_callback"
-        )
-            .then((data) => {
-                dispatch(setAccessToken(data.access_token)); // To redux state:
-                dispatch(setRefreshToken(data.refresh_token)); // To redux state:
-            })
-            .catch((error) => {
-                console.error("Error:", error);
-            });
+        if (client_id && client_secret) {
+            ExecuteAccessTokenRequest(
+                client_id,
+                client_secret,
+                authCode,
+                "http://localhost:3000/oauth_callback"
+            )
+                .then((data) => {
+                    dispatch(setAccessToken(data.access_token)); // To redux state:
+                    dispatch(setRefreshToken(data.refresh_token)); // To redux state:
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                });
+        }
     };
 
     const getMe = () => {
@@ -127,49 +131,6 @@ const Login: React.FC = (props) => {
                     value={password}
                     {...register("password", { required: true, min: 6 })}
                 />
-                <input
-                    type="text"
-                    placeholder="client_id"
-                    value={client_id}
-                    {...register("client_id")}
-                />
-                <input
-                    type="text"
-                    placeholder="client_secret"
-                    value={client_secret}
-                    {...register("client_secret")}
-                />
-                <input
-                    type="text"
-                    placeholder="response_type"
-                    value={response_type}
-                    {...register("response_type")}
-                />
-                <input
-                    type="text"
-                    placeholder="scope"
-                    value={scope}
-                    {...register("scope")}
-                />
-                <input
-                    type="text"
-                    placeholder="redirect_uri"
-                    value={redirect_uri}
-                    {...register("redirect_uri")}
-                />
-                <input
-                    type="text"
-                    placeholder="code_challenge"
-                    value={loginState.pkce.code_challenge}
-                    {...register("code_challenge")}
-                />
-                <input
-                    type="text"
-                    placeholder="code_challenge_method"
-                    value={code_challenge_method}
-                    {...register("code_challenge_method")}
-                />
-
                 <input type="submit" />
             </form>
             <button onClick={getAccessToken}>Second call (token)</button>
