@@ -4,25 +4,14 @@ export interface ILoginSliceValue {
     logged: boolean;
     userId: number;
     userName: string;
-    authCode: string;
     accessToken: string;
-    refreshToken: string;
-    jwtToken: string;
-    pkce: {
-        code_challenge: string;
-        code_verifier: string;
-    };
 }
 
 const initialState: ILoginSliceValue = {
     logged: false,
     userId: -1,
     userName: "",
-    authCode: "",
     accessToken: "",
-    refreshToken: "",
-    jwtToken: "",
-    pkce: { code_challenge: "", code_verifier: "" }
 };
 
 export const loginSlice = createSlice({
@@ -31,9 +20,6 @@ export const loginSlice = createSlice({
     reducers: {
         setLogin: (state, action) => {
             return { ...state, logged: action.payload };
-        },
-        setAuthCode: (state, action) => {
-            return { ...state, authCode: action.payload };
         },
         setUserId: (state, action) => {
             return { ...state, userId: action.payload };
@@ -44,17 +30,11 @@ export const loginSlice = createSlice({
         setAccessToken: (state, action) => {
             return { ...state, accessToken: action.payload };
         },
-        setRefreshToken: (state, action) => {
-            return { ...state, refreshToken: action.payload };
-        },
-        setJwtToken: (state, action) => {
-            return { ...state, jwtToken: action.payload };
-        },
-        setPkce: (state, action) => {
-            return { ...state, pkce: action.payload };
+        logOut: () => {
+            return initialState;
         }
     }
 })
 
-export const { setLogin, setPkce, setAuthCode, setAccessToken, setRefreshToken, setJwtToken, setUserId } = loginSlice.actions;
+export const { setLogin, setUserId, setUserName, setAccessToken, logOut } = loginSlice.actions;
 export default loginSlice.reducer;

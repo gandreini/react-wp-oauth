@@ -2,26 +2,26 @@
     "name": "mondosurf-auth",
     "version": "0.1.0",
     "private": true,
-    "proxy": "http://mondosurf-be.local.com/",
+    "proxy": "https://rest-api.mondosurf.local.com",
     "dependencies": {
+        "@hookform/error-message": "^2.0.0",
         "@reduxjs/toolkit": "^1.6.0",
         "@testing-library/jest-dom": "^5.11.4",
         "@testing-library/react": "^11.1.0",
         "@testing-library/user-event": "^12.1.10",
+        "@types/device-uuid": "^1.0.0",
         "@types/jest": "^26.0.15",
         "@types/node": "^12.0.0",
         "@types/react": "^17.0.0",
         "@types/react-dom": "^17.0.0",
         "axios": "^0.21.1",
+        "device-uuid": "^1.0.4",
         "form-urlencoded": "^6.0.4",
         "jwt-decode": "^3.1.2",
-        "pkce-challenge": "^2.2.0",
         "react": "^17.0.2",
         "react-dom": "^17.0.2",
         "react-hook-form": "^7.8.3",
         "react-i18next": "^11.11.0",
-        "react-oauth2-pkce": "^2.0.1",
-        "react-pkce": "^0.9.11",
         "react-redux": "^7.2.4",
         "react-router-dom": "^5.2.0",
         "react-scripts": "4.0.3",
@@ -29,10 +29,9 @@
         "web-vitals": "^1.0.1"
     },
     "scripts": {
-        "start": "react-scripts start",
+        "start": "HTTPS=true SSL_CRT_FILE=/Users/giulioandreini/localhost.pem SSL_KEY_FILE=/Users/giulioandreini/localhost-key.pem HOST=mondosurf.local.com react-scripts start",
         "build": "react-scripts build",
-        "test": "react-scripts test",
-        "eject": "react-scripts eject"
+        "test": "react-scripts test"
     },
     "eslintConfig": {
         "extends": [
@@ -53,6 +52,8 @@
         ]
     },
     "devDependencies": {
-        "@types/react-router-dom": "^5.1.7"
+        "@types/react-router-dom": "^5.1.7",
+        "autoprefixer": "^9.8.6",
+        "postcss": "^7.0.36"
     }
 }

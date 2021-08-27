@@ -1,0 +1,5 @@
+# BEGIN JWT Authentication for WP REST API
+RewriteEngine on
+RewriteCond %{HTTP:Authorization} ^(.*)
+RewriteRule ^(.*) - [E=HTTP_AUTHORIZATION:%1]
+# END JWT Authentication for WP REST API
