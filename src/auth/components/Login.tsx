@@ -41,16 +41,20 @@ const Login: React.FC = (props) => {
     const [passwordShown, setPasswordShown] = useState(false);
     const [deviceId, setDeviceId] = useState<string>("");
 
+    // Redux state.
+    const accessToken = useSelector(
+        (state: RootState) => state.login.accessToken
+    );
+    const logged = useSelector((state: RootState) => state.login.logged);
+    const userId = useSelector((state: RootState) => state.login.userId);
+
     useEffect(() => {
         setDeviceId(getDeviceId());
     }, []);
 
-    // Redux state.
-    // const authCode = useSelector((state: RootState) => state.login.authCode);
-    const accessToken = useSelector(
-        (state: RootState) => state.login.accessToken
-    );
-    const dispatch = useDispatch();
+    useEffect(() => {
+        if (logged === true) setFormState("login_completed");
+    }, [logged]);
 
     /**
      * First check that verifies if the email exists.
@@ -62,7 +66,6 @@ const Login: React.FC = (props) => {
         setUserEmail(data.email);
         mailCheck(data.email)
             .then((response) => {
-                console.log(response);
                 if (response && response.data) {
                     setFormState("login2");
                 } else {
@@ -84,17 +87,14 @@ const Login: React.FC = (props) => {
         auth(userEmail, data.password, deviceId)
             .then((response) => {
                 if (response && response.data) {
-                    console.log("response2:", response);
-                    dispatch(setAccessToken(response.data.access_token)); // To redux state
-                    dispatch(setUserId(response.data.user_id)); // To redux state
-                    dispatch(setLogin(true));
                     setFormState("login_completed");
                 } else {
-                    // ! TODO Error handling here
+                    // ! TODO Error handling here, communicate login error
                 }
             })
             .catch(function (error) {
                 console.log("error:", error);
+                // What is this?
                 setError("password", {
                     type: "wrongPassword",
                     message: "Please try another password!",
@@ -110,14 +110,11 @@ const Login: React.FC = (props) => {
         revoke(accessToken, deviceId)
             .then((response) => {
                 if (response && response.data.success === true) {
-                    dispatch(logOut()); // To redux state
                     setFormState("login1");
                 }
             })
             .catch(function (error) {
                 console.log("Error while logging out", error);
-                dispatch(logOut()); // To redux state
-                setFormState("login1");
             });
     };
 
@@ -127,18 +124,12 @@ const Login: React.FC = (props) => {
     const refreshAccessToken = () => {
         refreshToken(accessToken, deviceId)
             .then((response) => {
-                console.log("response", response);
-                if (response && response.data.success === true) {
-                    dispatch(setAccessToken(response!.data.access_token)); // To redux state
-                } else {
-                    dispatch(logOut()); // To redux state
+                if (response && response.data.success !== true) {
                     setFormState("login1");
                 }
             })
             .catch(function (error) {
                 console.log("Error while refreshing the token", error);
-                dispatch(logOut()); // To redux state
-                setFormState("login1");
             });
     };
 

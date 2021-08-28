@@ -4,8 +4,15 @@ import Login from "./auth/components/Login";
 import Signup from "./auth/components/Signup";
 import { store } from "./state/store";
 import { Provider } from "react-redux";
+import AuthTokenExpiryCheck from "./auth/utils/AuthTokenExpiryCheck";
+import { useEffect } from "react";
+import { checkIfAppIsLoggedOnOpen } from "./auth/communication/authentication";
 
 function App() {
+    useEffect(() => {
+        checkIfAppIsLoggedOnOpen();
+    }, []);
+
     return (
         <Provider store={store}>
             <Router>
@@ -28,6 +35,7 @@ function App() {
                     </Route>
                 </Switch>
             </Router>
+            <AuthTokenExpiryCheck />
         </Provider>
     );
 }
