@@ -1,14 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 export interface ILoginSliceValue {
-    logged: boolean;
+    logged: 'yes' | 'no' | 'checking';
     userId: number;
     userName: string;
     accessToken: string;
 }
 
 const initialState: ILoginSliceValue = {
-    logged: false,
+    logged: 'checking',
     userId: -1,
     userName: "",
     accessToken: "",
@@ -30,8 +30,14 @@ export const loginSlice = createSlice({
         setAccessToken: (state, action) => {
             return { ...state, accessToken: action.payload };
         },
-        logOut: () => {
-            return initialState;
+        logOut: (state) => {
+            return {
+                ...state,
+                logged: 'no',
+                userId: -1,
+                userName: "",
+                accessToken: ""
+            }
         }
     }
 })

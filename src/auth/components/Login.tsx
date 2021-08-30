@@ -1,21 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import {
-    setLogin,
-    setUserId,
-    setUserName,
-    setAccessToken,
-    logOut,
-} from "../state/loginSlice";
 import { RootState } from "../../state/store";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import {
     mailCheck,
     auth,
     revoke,
     refreshToken,
 } from "../communication/authentication";
-import { checkIfEmailIsValid, getDeviceId } from "../utils/authUtils";
+import {
+    checkIfEmailIsValid,
+    getDeviceId,
+    apiErrorsTranslation,
+} from "../utils/authUtils";
 
 const Login: React.FC = (props) => {
     // React hook form.
@@ -28,16 +25,14 @@ const Login: React.FC = (props) => {
     } = useForm();
 
     const [formState, setFormState] = useState<
-        | "login1"
-        | "login1_loading"
-        | "login2"
-        | "login2_loading"
-        | "login_completed"
-        | "register1"
-        | "register2"
-    >("login1");
+        | "email"
+        | "email_waiting"
+        | "login"
+        | "login_loading"
+        | "register"
+        | "logged"
+    >("email");
     const [userEmail, setUserEmail] = useState<string>("");
-    const [userPassword, setUserPassword] = useState<string>("");
     const [passwordShown, setPasswordShown] = useState(false);
     const [deviceId, setDeviceId] = useState<string>("");
 
@@ -46,14 +41,14 @@ const Login: React.FC = (props) => {
         (state: RootState) => state.login.accessToken
     );
     const logged = useSelector((state: RootState) => state.login.logged);
-    const userId = useSelector((state: RootState) => state.login.userId);
+    const userName = useSelector((state: RootState) => state.login.userName);
 
     useEffect(() => {
         setDeviceId(getDeviceId());
     }, []);
 
     useEffect(() => {
-        if (logged === true) setFormState("login_completed");
+        if (logged === "yes") setFormState("logged");
     }, [logged]);
 
     /**
@@ -62,14 +57,14 @@ const Login: React.FC = (props) => {
      * If it doesn't exist, the user is sent to the signup form.
      */
     const onEmailCheck = (data: { email: string }) => {
-        setFormState("login1_loading");
+        setFormState("email_waiting");
         setUserEmail(data.email);
         mailCheck(data.email)
             .then((response) => {
                 if (response && response.data) {
-                    setFormState("login2");
+                    setFormState("login");
                 } else {
-                    setFormState("register2");
+                    setFormState("register");
                 }
             })
             .catch(function (error) {
@@ -81,27 +76,48 @@ const Login: React.FC = (props) => {
     /**
      * Login request is sent to the "auth" endpoint.
      */
-    const onLogin = (data: { password: string }) => {
-        setFormState("login2_loading");
-        setUserPassword(data.password);
-        auth(userEmail, data.password, deviceId)
+    const onLogin = (data: { email: string; password: string }) => {
+        setFormState("login_loading");
+        auth(data.email, data.password, deviceId)
             .then((response) => {
                 if (response && response.data) {
-                    setFormState("login_completed");
+                    setFormState("logged");
                 } else {
                     // ! TODO Error handling here, communicate login error
                 }
             })
             .catch(function (error) {
-                console.log("error:", error);
-                // What is this?
-                setError("password", {
-                    type: "wrongPassword",
-                    message: "Please try another password!",
-                });
-                setFormState("login2");
+                console.log("error:", error.response.data);
+                if (
+                    error.response.data.code ===
+                    "EMAIL_NOT_CORRESPONDING_TO_USER"
+                ) {
+                    setError("email", {
+                        type: "wrongEmail",
+                        message: apiErrorsTranslation(error.response.data.code),
+                    });
+                } else if (
+                    error.response.data.code === "EMAIL_PASSWORD_NOT_MATCH"
+                ) {
+                    setError("password", {
+                        type: "wrongPassword",
+                        message: apiErrorsTranslation(error.response.data.code),
+                    });
+                }
+
+                // ! TODO Maybe other errors should be handled here
+                setFormState("login");
             });
     };
+
+    /**
+     * Register a new user.
+     */
+    const onRegister = (data: {
+        name: string;
+        email: string;
+        password: string;
+    }) => {};
 
     /**
      * Revokes the token and logs out the user.
@@ -110,11 +126,12 @@ const Login: React.FC = (props) => {
         revoke(accessToken, deviceId)
             .then((response) => {
                 if (response && response.data.success === true) {
-                    setFormState("login1");
+                    setFormState("email");
                 }
             })
             .catch(function (error) {
                 console.log("Error while logging out", error);
+                // ! TODO What happens if there's a logout error?
             });
     };
 
@@ -125,7 +142,7 @@ const Login: React.FC = (props) => {
         refreshToken(accessToken, deviceId)
             .then((response) => {
                 if (response && response.data.success !== true) {
-                    setFormState("login1");
+                    setFormState("email");
                 }
             })
             .catch(function (error) {
@@ -144,16 +161,18 @@ const Login: React.FC = (props) => {
 
     return (
         <>
+            {logged === "checking" && <>Wait dude!</>}
             Access token: {accessToken}
             <br />
             <br />
-            {(formState === "login1" || formState === "login1_loading") && (
+            {logged === "no" && formState === "email" && (
                 <>
                     <p>Insert your email to register or login</p>
                     <form onSubmit={handleSubmit(onEmailCheck)}>
                         <label className="" htmlFor="email_field">
                             Email
                         </label>
+                        <br />
                         <input
                             className=""
                             id="email_field"
@@ -167,30 +186,36 @@ const Login: React.FC = (props) => {
                             })}
                             onChange={() => clearErrors("email")}
                         />
-                        {errors.email && (
+                        {errors.email && errors.email.type === "required" && (
+                            <p>Please insert the email</p>
+                        )}
+                        {errors.email && errors.email.type === "minLength" && (
+                            <p>The email seems too short</p>
+                        )}
+                        {errors.email && errors.email.type === "validate" && (
                             <p>Please verify the provided email</p>
                         )}
-                        <button
-                            className=""
-                            disabled={formState === "login1_loading"}
-                        >
-                            NEXT
-                        </button>
+                        <br />
+                        <button className="">NEXT</button>
                     </form>
                 </>
             )}
-            {(formState === "login2" || formState === "login2_loading") && (
+            {logged === "no" && formState === "email_waiting" && (
+                <>Checking email</>
+            )}
+            {logged === "no" && formState === "login" && (
                 <>
                     <p>Insert your password</p>
                     <form onSubmit={handleSubmit(onLogin)}>
-                        <label className="" htmlFor="password_field">
-                            Password
+                        <label className="" htmlFor="email_field">
+                            Email
                         </label>
+                        <br />
                         <input
                             id="email_field"
                             type="email"
                             autoComplete="email"
-                            value={userEmail}
+                            defaultValue={userEmail}
                             placeholder="Email"
                             {...register("email", {
                                 required: true,
@@ -199,6 +224,23 @@ const Login: React.FC = (props) => {
                             })}
                             onChange={() => clearErrors("email")}
                         />
+                        {errors.email && errors.email.type === "required" && (
+                            <p>Please insert the email</p>
+                        )}
+                        {errors.email && errors.email.type === "minLength" && (
+                            <p>The email seems too short</p>
+                        )}
+                        {errors.email && errors.email.type === "validate" && (
+                            <p>Please verify the provided email</p>
+                        )}
+                        {errors.email && errors.email.type === "wrongEmail" && (
+                            <p>{errors.email.message}</p>
+                        )}
+                        <br />
+                        <label className="" htmlFor="password_field">
+                            Password
+                        </label>
+                        <br />
                         <input
                             className=""
                             id="password_field"
@@ -211,8 +253,100 @@ const Login: React.FC = (props) => {
                             })}
                             onChange={() => clearErrors("password")}
                         />
+                        <br />
                         <button onClick={togglePasswordVisiblity}>
-                            Show/Hide password
+                            {passwordShown && <>Hide password</>}
+                            {!passwordShown && <>Show password</>}
+                        </button>
+                        {errors.password &&
+                            errors.password.type === "required" && (
+                                <p>Please insert the password</p>
+                            )}
+                        {errors.password &&
+                            errors.password.type === "minLength" && (
+                                <p>The password seems too short</p>
+                            )}
+                        {errors.password &&
+                            errors.password.type === "wrongPassword" && (
+                                <p>{errors.password.message}</p>
+                            )}
+                        <button className="">LOGIN</button>
+                    </form>
+                    <br />
+                    <button
+                        className=""
+                        onClick={() => {
+                            setFormState("email");
+                        }}
+                    >
+                        BACK
+                    </button>
+                </>
+            )}
+            {logged === "no" && formState === "login_loading" && (
+                <>Logging in</>
+            )}
+            {logged === "no" && formState === "register" && (
+                <>
+                    Register new account
+                    <br />
+                    <p>Insert the missing data</p>
+                    <form onSubmit={handleSubmit(onRegister)}>
+                        <label className="" htmlFor="name_field">
+                            Name
+                        </label>
+                        <br />
+                        <input
+                            className=""
+                            id="name_field"
+                            autoComplete="name"
+                            type="text"
+                            placeholder="How shall we call you"
+                            {...register("name", {
+                                required: true,
+                                minLength: 2,
+                            })}
+                            onChange={() => clearErrors("name")}
+                        />
+                        <br />
+                        <label className="" htmlFor="email_field">
+                            Email
+                        </label>
+                        <br />
+                        <input
+                            id="email_field"
+                            type="email"
+                            autoComplete="email"
+                            defaultValue={userEmail}
+                            placeholder="Your email"
+                            {...register("email", {
+                                required: true,
+                                minLength: 6,
+                                validate: (value) => checkIfEmailIsValid(value),
+                            })}
+                            onChange={() => clearErrors("email")}
+                        />
+                        <br />
+                        <label className="" htmlFor="password_field">
+                            Password
+                        </label>
+                        <br />
+                        <input
+                            className=""
+                            id="password_field"
+                            autoComplete="current-password"
+                            type={passwordShown ? "text" : "password"}
+                            placeholder="Choose a password"
+                            {...register("password", {
+                                required: true,
+                                minLength: 8,
+                            })}
+                            onChange={() => clearErrors("password")}
+                        />
+                        <br />
+                        <button onClick={togglePasswordVisiblity}>
+                            {passwordShown && <>Hide password</>}
+                            {!passwordShown && <>Show password</>}
                         </button>
                         {errors.password && console.log(errors)}
                         {errors.password &&
@@ -223,35 +357,30 @@ const Login: React.FC = (props) => {
                             errors.password.type === "wrongPassword" && (
                                 <p>{errors.password.message}</p>
                             )}
-                        <button
-                            className=""
-                            disabled={formState === "login2_loading"}
-                        >
-                            LOGIN
-                        </button>
+                        <button className="">LOGIN</button>
                     </form>
                     <button
                         className=""
                         onClick={() => {
-                            setFormState("login1");
+                            setFormState("email");
                         }}
                     >
                         BACK
                     </button>
                 </>
             )}
-            {formState === "register2" && <>Register new account</>}
-            {formState === "login_completed" && (
-                <>Welcome back to Mondo Surf!</>
+            {logged === "yes" && formState === "logged" && (
+                <>
+                    Welcome back to Mondo Surf, {userName}!
+                    <br />
+                    <button className="" onClick={logout}>
+                        LOGOUT
+                    </button>
+                    <button className="" onClick={refreshAccessToken}>
+                        REFRESH ACCESS TOKEN
+                    </button>
+                </>
             )}
-            <br />
-            <br />
-            <button className="" onClick={logout}>
-                LOGOUT
-            </button>
-            <button className="" onClick={refreshAccessToken}>
-                REFRESH ACCESS TOKEN
-            </button>
         </>
     );
 };

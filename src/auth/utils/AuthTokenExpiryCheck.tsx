@@ -20,7 +20,7 @@ const AuthTokenExpiryCheck: React.FC = (props) => {
     const [count, setCount] = useState<number>(0);
 
     useEffect(() => {
-        if (accessToken && logged) {
+        if (accessToken && logged === "yes") {
             const timer = setTimeout(() => {
                 setCount((c) => c + 1);
                 checkToken();
@@ -30,7 +30,7 @@ const AuthTokenExpiryCheck: React.FC = (props) => {
     }, [count, logged]);
 
     const checkToken = () => {
-        if (accessToken && logged) {
+        if (accessToken && logged === "yes") {
             const decodedToken: IAccessToken = jwt_decode(accessToken);
             if (Math.floor(Date.now() / 1000) > decodedToken.exp) {
                 refreshToken(accessToken, getDeviceId());

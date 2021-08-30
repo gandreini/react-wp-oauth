@@ -69,3 +69,40 @@ export function getCookie(cname: string) {
     }
     return "";
 }
+
+/**
+ * Provide and intelligible text for a given error code, provided by the API.
+ * i18n translation can be applied here.
+ * 
+ * @param $error string Error code
+ * @returns errors string Readable text for the error.
+ */
+export function apiErrorsTranslation($error: string): string {
+    switch ($error) {
+        case 'EMAIL_REQUIRED': {
+            return 'The email is required, and it seems it is missing.';
+        }
+        case 'PASSWORD_REQUIRED': {
+            return 'The password is required, and it seems it is missing.';
+        }
+        case 'ACCESS_TOKEN_REQUIRED': {
+            return 'The access token is required, and it seems it is missing.';
+        }
+        case 'ACCESS_TOKEN_NOT_DECODED': {
+            return 'There was an error while decoding the access token.';
+        }
+        case 'DEVICEID_REQUIRED': {
+            return 'The device id is required, and it seems it is missing.';
+        }
+        case 'EMAIL_NOT_CORRESPONDING_TO_USER': {
+            return 'The provided email doesn\'t belong to any registered user.';
+        }
+        case 'CORRESPONDING_USER_NOT_FOUND': {
+            return 'The provided user id doesn\'t belong to any registered user.';
+        }
+        case 'EMAIL_PASSWORD_NOT_MATCH': {
+            return 'The email and password didn\'t match, please check them and try again.';
+        }
+    }
+    return 'There was an error.';
+}

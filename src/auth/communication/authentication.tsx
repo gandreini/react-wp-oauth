@@ -36,8 +36,7 @@ export function mailCheck(email: string) {
             }
         })
         .catch(function (error) {
-            console.log(error);
-            throw new Error(error);
+            throw error;
         });
 }
 
@@ -68,13 +67,16 @@ export function auth(email: string, password: string, deviceId: string) {
             if (response.status === 200) {
                 store.dispatch(setAccessToken(response.data.access_token)); // To redux state
                 store.dispatch(setUserId(response.data.user_id)); // To redux state
-                store.dispatch(setLogin(true));
+                store.dispatch(setUserName(response.data.user_name)); // To redux state
+                store.dispatch(setLogin("yes"));
                 return response;
+            } else {
+                store.dispatch(setLogin("no"));
             }
         })
         .catch(function (error) {
-            console.log(error);
-            throw new Error(error);
+            store.dispatch(setLogin("no"));
+            throw error;
         });
 }
 
@@ -106,8 +108,7 @@ export function revoke(accessToken: string, deviceId: string) {
             }
         })
         .catch(function (error) {
-            console.log(error);
-            throw new Error(error);
+            throw error;
         });
 }
 
@@ -120,6 +121,7 @@ export function revoke(accessToken: string, deviceId: string) {
  * @returns a promise. Response is the new accessToken if it was refreshed, ? if there was en error.
  */
 export function refreshToken(accessToken: string, deviceId: string) {
+    console.log("refreshToken");
     return axios({
         method: "post",
         url: process.env.REACT_APP_JWT_API_URL! + "refresh-token",
@@ -143,8 +145,7 @@ export function refreshToken(accessToken: string, deviceId: string) {
             }
         })
         .catch(function (error) {
-            console.log(error);
-            throw new Error(error);
+            throw error;
         });
 }
 
@@ -173,15 +174,17 @@ export function checkIfAppIsLoggedOnOpen() {
         },
     })
         .then((response) => {
-            console.log(response);
             if (response.status === 200 && response.data.success === true) {
-                console.log("QUI");
                 store.dispatch(setAccessToken(response.data.access_token)); // To redux state
                 store.dispatch(setUserId(response.data.user_id)); // To redux state
-                store.dispatch(setLogin(true));
+                store.dispatch(setUserName(response.data.user_name)); // To redux state
+                store.dispatch(setLogin("yes"));
+            } else {
+                store.dispatch(setLogin("no"));
             }
         })
         .catch(function (error) {
+            store.dispatch(setLogin("no"));
             // console.log(error);
             // throw new Error(error);
         });
