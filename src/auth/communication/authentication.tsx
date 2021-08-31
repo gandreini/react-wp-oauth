@@ -189,3 +189,53 @@ export function checkIfAppIsLoggedOnOpen() {
             // throw new Error(error);
         });
 }
+
+/**
+ * Calls the API to register the user.
+ * The newly created user is also logged, creating the auth and refresh tokens.
+ *
+ * @param name string Name of the user
+ * @param email string The email of the user
+ * @param password string The password of the user
+ * @param deviceId
+ *
+ * @returns a promise. Response is true if the mail exists, false if it doesn't exist.
+ */
+export function userRegister(
+    name: string,
+    email: string,
+    password: string,
+    termsConditions: boolean,
+    deviceId: string
+) {
+    return axios({
+        method: "post",
+        url: process.env.REACT_APP_JWT_API_URL! + "user-register",
+        data: formurlencoded({
+            name: name,
+            email: email,
+            password: password,
+            terms: termsConditions,
+            device_id: deviceId,
+        }),
+        withCredentials: true, // ! TODO Verify when needed
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    })
+        .then((response) => {
+            if (response.status === 200) {
+                store.dispatch(setAccessToken(response.data.access_token)); // To redux state
+                store.dispatch(setUserId(response.data.user_id)); // To redux state
+                store.dispatch(setUserName(response.data.user_name)); // To redux state
+                store.dispatch(setLogin("yes"));
+                return response;
+            } else {
+                store.dispatch(setLogin("no"));
+            }
+        })
+        .catch(function (error) {
+            store.dispatch(setLogin("no"));
+            throw error;
+        });
+}

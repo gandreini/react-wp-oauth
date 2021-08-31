@@ -103,6 +103,18 @@ export function apiErrorsTranslation($error: string): string {
         case 'EMAIL_PASSWORD_NOT_MATCH': {
             return 'The email and password didn\'t match, please check them and try again.';
         }
+        case 'NAME_REQUIRED': {
+            return 'The name is required.';
+        }
+        case 'EMAIL_ALREADY_EXIST': {
+            return 'The email already exist, try to login, change email or contact the administrator.';
+        }
+        case 'USERNAME_ALREADY_EXIST': {
+            return 'This is weird, The username already exist. Try to login, change email or contact the administrator.';
+        }
+        case 'TERMS_REQUIRED': {
+            return 'Terms and conditions must be accepted to register.';
+        }
     }
     return 'There was an error.';
 }

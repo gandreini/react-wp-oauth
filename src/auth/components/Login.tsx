@@ -7,6 +7,7 @@ import {
     auth,
     revoke,
     refreshToken,
+    userRegister,
 } from "../communication/authentication";
 import {
     checkIfEmailIsValid,
@@ -30,6 +31,7 @@ const Login: React.FC = (props) => {
         | "login"
         | "login_loading"
         | "register"
+        | "register_loading"
         | "logged"
     >("email");
     const [userEmail, setUserEmail] = useState<string>("");
@@ -90,17 +92,11 @@ const Login: React.FC = (props) => {
                 console.log("error:", error.response.data);
                 if (
                     error.response.data.code ===
-                    "EMAIL_NOT_CORRESPONDING_TO_USER"
+                        "EMAIL_NOT_CORRESPONDING_TO_USER" ||
+                    error.response.data.code === "EMAIL_PASSWORD_NOT_MATCH"
                 ) {
                     setError("email", {
                         type: "wrongEmail",
-                        message: apiErrorsTranslation(error.response.data.code),
-                    });
-                } else if (
-                    error.response.data.code === "EMAIL_PASSWORD_NOT_MATCH"
-                ) {
-                    setError("password", {
-                        type: "wrongPassword",
                         message: apiErrorsTranslation(error.response.data.code),
                     });
                 }
@@ -117,7 +113,44 @@ const Login: React.FC = (props) => {
         name: string;
         email: string;
         password: string;
-    }) => {};
+        termsConditions: boolean;
+    }) => {
+        setFormState("register_loading");
+        userRegister(
+            data.name,
+            data.email,
+            data.password,
+            data.termsConditions,
+            deviceId
+        )
+            .then((response) => {
+                console.log(response);
+                if (response && response.data) {
+                    setFormState("logged");
+                } else {
+                    // ! TODO Error handling here, communicate login error
+                }
+            })
+            .catch(function (error) {
+                console.log("error:", error.response.data);
+                if (
+                    error.response.data.code === "NAME_REQUIRED" ||
+                    error.response.data.code === "EMAIL_REQUIRED" ||
+                    error.response.data.code === "PASSWORD_REQUIRED" ||
+                    error.response.data.code === "EMAIL_ALREADY_EXIST" ||
+                    error.response.data.code === "USERNAME_ALREADY_EXIST" ||
+                    error.response.data.code === "TERMS_REQUIRED"
+                ) {
+                    setError("email", {
+                        type: "wrongEmail",
+                        message: apiErrorsTranslation(error.response.data.code),
+                    });
+                }
+
+                // ! TODO Maybe other errors should be handled here
+                setFormState("register");
+            });
+    };
 
     /**
      * Revokes the token and logs out the user.
@@ -308,6 +341,12 @@ const Login: React.FC = (props) => {
                             })}
                             onChange={() => clearErrors("name")}
                         />
+                        {errors.name && errors.name.type === "required" && (
+                            <p>Please insert your name</p>
+                        )}
+                        {errors.name && errors.name.type === "minLength" && (
+                            <p>The name is too short</p>
+                        )}
                         <br />
                         <label className="" htmlFor="email_field">
                             Email
@@ -326,6 +365,18 @@ const Login: React.FC = (props) => {
                             })}
                             onChange={() => clearErrors("email")}
                         />
+                        {errors.email && errors.email.type === "required" && (
+                            <p>Please insert the email</p>
+                        )}
+                        {errors.email && errors.email.type === "minLength" && (
+                            <p>The email seems too short</p>
+                        )}
+                        {errors.email && errors.email.type === "validate" && (
+                            <p>Please verify the provided email</p>
+                        )}
+                        {errors.email && errors.email.type === "wrongEmail" && (
+                            <p>{errors.email.message}</p>
+                        )}
                         <br />
                         <label className="" htmlFor="password_field">
                             Password
@@ -348,7 +399,10 @@ const Login: React.FC = (props) => {
                             {passwordShown && <>Hide password</>}
                             {!passwordShown && <>Show password</>}
                         </button>
-                        {errors.password && console.log(errors)}
+                        {errors.password &&
+                            errors.password.type === "required" && (
+                                <p>Please insert the password</p>
+                            )}
                         {errors.password &&
                             errors.password.type === "minLength" && (
                                 <p>The password seems too short</p>
@@ -357,7 +411,27 @@ const Login: React.FC = (props) => {
                             errors.password.type === "wrongPassword" && (
                                 <p>{errors.password.message}</p>
                             )}
-                        <button className="">LOGIN</button>
+                        <br />
+                        <input
+                            className=""
+                            id="terms_conditions_field"
+                            type="checkbox"
+                            {...register("termsConditions", {
+                                required: true,
+                            })}
+                        />
+                        <label className="" htmlFor="terms_conditions_field">
+                            Accept Terms and Conditions
+                        </label>
+                        {errors.termsConditions &&
+                            errors.termsConditions.type === "required" && (
+                                <p>
+                                    You must accept the Terms and Conditions to
+                                    register.
+                                </p>
+                            )}
+                        <br />
+                        <button className="">REGISTER</button>
                     </form>
                     <button
                         className=""
@@ -368,6 +442,9 @@ const Login: React.FC = (props) => {
                         BACK
                     </button>
                 </>
+            )}
+            {logged === "no" && formState === "register_loading" && (
+                <>Registering...</>
             )}
             {logged === "yes" && formState === "logged" && (
                 <>
