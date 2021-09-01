@@ -6,6 +6,8 @@ import { Provider } from "react-redux";
 import AuthTokenExpiryCheck from "./auth/utils/AuthTokenExpiryCheck";
 import { useEffect } from "react";
 import { checkIfAppIsLoggedOnOpen } from "./auth/communication/authentication";
+import AccountVerify from "./auth/components/AccountVerify";
+import PasswordReset from "./auth/components/PasswordReset";
 
 function App() {
     useEffect(() => {
@@ -28,6 +30,12 @@ function App() {
                 <Switch>
                     <Route path="/login">
                         <Login />
+                    </Route>
+                    <Route path="/account-verify">
+                        <AccountVerify />
+                    </Route>
+                    <Route path="/reset-password">
+                        <PasswordReset />
                     </Route>
                 </Switch>
             </Router>

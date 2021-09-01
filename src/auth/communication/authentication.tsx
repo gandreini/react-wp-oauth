@@ -239,3 +239,87 @@ export function userRegister(
             throw error;
         });
 }
+
+/**
+ * Calls the API to confirm the user account, given the one time token passed in the URL.
+ *
+ * @param token string One time token.
+ *
+ * @returns a promise. Response is true if the mail exists, false if it doesn't exist.
+ */
+export function confirmAccount(token: string) {
+    return axios({
+        method: "post",
+        url: process.env.REACT_APP_JWT_API_URL! + "confirm-account",
+        data: formurlencoded({
+            token: token,
+        }),
+        withCredentials: true, // ! TODO Verify when needed
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    })
+        .then((response) => {
+            return response;
+        })
+        .catch(function (error) {
+            throw error;
+        });
+}
+
+/**
+ * Calls the API create to send the user and email to reset the password.
+ *
+ * @param email string email of the user.
+ *
+ * @returns a promise. Response is true if the mail exists, false if it doesn't exist.
+ */
+export function requestPasswordResetEmail(email: string) {
+    return axios({
+        method: "post",
+        url: process.env.REACT_APP_JWT_API_URL! + "request-password-reset",
+        data: formurlencoded({
+            email: email,
+        }),
+        withCredentials: true, // ! TODO Verify when needed
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    })
+        .then((response) => {
+            return response;
+        })
+        .catch(function (error) {
+            throw error;
+        });
+}
+
+/**
+ * Calls the API create a new password for the user.
+ * The user is retrieved by the JWT token.
+ *
+ * @param token string One time token.
+ * @param newPassword string The new password for the user.
+ *
+ * @returns a promise. Response is true if the mail exists, false if it doesn't exist.
+ */
+export function passwordReset(token: string, newPassword: string) {
+    return axios({
+        method: "post",
+        url: process.env.REACT_APP_JWT_API_URL! + "password-reset",
+        data: formurlencoded({
+            token: token,
+            new_password: newPassword,
+        }),
+        withCredentials: true, // ! TODO Verify when needed
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    })
+        .then((response) => {
+            return response;
+        })
+        .catch(function (error) {
+            throw error;
+        });
+}
